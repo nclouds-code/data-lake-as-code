@@ -1,0 +1,46 @@
+Resources:
+  StockMarketS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Join
+      - "-"
+      - - "stockmarket-"
+        - !Select
+          - 0
+          - !Split
+            - "-"
+            - !Select
+              - 2
+              - !Split
+                - "/"
+                - !Ref "AWS::StackId"
+
+  VPC:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://${S3CFTBucketName}.s3.amazonaws.com/${S3CFTFolderName}/vpc.yml"
+      Parameters:
+        Environment: poc
+        VpcName: stockmarket
+        VpcCIDR: 10.30.0.0/16
+        NumberOfSubnets: 4
+        SubnetOffset: 8
+
+  IAM:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://${S3CFTBucketName}.s3.amazonaws.com/${S3CFTFolderName}/vpc.yml"
+      Parameters:
+        StockmarketS3Bucket: !Ref StockMarketS3Bucket
+
+  Redshift:
+
+  Glue:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://${S3CFTBucketName}.s3.amazonaws.com/${S3CFTFolderName}/vpc.yml"
+      Parameters:
+        GlueRole: !GetAtt IAM.Outputs.GlueRole
+        GlueRoleARN: !GetAtt IAM.Outputs.GlueRoleARN
+        StockmarketS3Bucket: !Ref StockMarketS3Bucket
+        RedshiftJDBCUrl:

@@ -1,0 +1,41 @@
+Parameters:
+  StockmarketS3Bucket:
+    Type: String
+
+Resources:
+  GlueRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: glue.amazonaws.com
+            Action: sts:AssumeRole
+      Description: poc-stockmarket-s3-access
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole
+        - arn:aws:iam::aws:policy/AWSGlueConsoleFullAccess
+      MaxSessionDuration: 43200
+      Path: /
+      RoleName: poc-stockmarket-s3-access
+      Policies:
+        - PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:*
+                Resource:
+                  - !Sub "arn:aws:s3:::${StockmarketS3Bucket}/*"
+                  - !Sub "arn:aws:s3:::${StockmarketS3Bucket}"
+          PolicyName: poc-stockmarket-s3-access
+
+Outputs:
+  GlueRole:
+    Description: IAM role for Glue Crawler
+    Value: !Ref GlueRole
+
+    GlueRoleArn:
+    Description: IAM role for Glue Job
+    Value: !GetAtt GlueRole.Arn

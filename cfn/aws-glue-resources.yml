@@ -1,0 +1,81 @@
+Parameters:
+  GlueRole:
+    Type: String
+  GlueRoleARN:
+    Type: String
+  StockmarketS3Bucket:
+    Type: String
+  RedshiftJDBCUrl:
+    Type: String
+
+Resources:
+  #### Database ####
+  StockMarketDatabase:
+    Type: AWS::Glue::Database
+    Properties:
+      CatalogId: !Ref AWS::AccountId
+      DatabaseInput:
+        Name: Database-StockMarket
+  #### Classifier ####
+  StockMarketClassifier:
+    Type: AWS::Glue::Classifier
+    Properties:
+      CsvClassifier:
+        AllowSingleColumn: false
+        ContainsHeader: true
+        Delimiter: ","
+        DisableValueTrimming: Boolean
+        Header:
+          - Date
+          - Open
+          - High
+          - Low
+          - Close
+          - AdjClose
+          - Volume
+        Name: Classifier-StockMarket
+        QuoteSymbol: "\""
+  #### Crawler ####
+  StockMarketCrawler:
+    Type: AWS::Glue::Crawler
+    Properties:
+      Classifiers:
+        - !Ref StockMarketClassifier
+      DatabaseName: !Ref StockMarketDatabase
+      Description: Crawler for StockMarket POC
+      Name: Crawler-StockMarket
+      Role: !Ref GlueRole
+      SchemaChangePolicy:
+        UpdateBehavior: "UPDATE_IN_DATABASE"
+        DeleteBehavior: "DELETE_FROM_DATABASE"
+      Configuration: "{\"Version\":1.0,\"Grouping\":{\"TableGroupingPolicy\":\"CombineCompatibleSchemas\"}}"
+      Targets:
+        S3Targets:
+          - Path: !Sub "s3://${StockmarketS3Bucket}/partitioned/"
+  #### Job ####
+  StockMarketJob:
+    Type: AWS::Glue::Job
+    Properties:
+      Command:
+        Name: glueetl
+        PythonVersion: 3
+        ScriptLocation: !Sub "s3://nclouds-labs-6846257862436/glue-scripts/stockmarket.py"
+      DefaultArguments:
+        '--job-bookmark-option': job-bookmark-disable
+        '--enable-metrics': ''
+        '--TempDir': !Sub "s3://${StockmarketS3Bucket}/glue-scripts/stockmarket.py.temp"
+        '--tempbucket': !Sub "s3://${StockmarketS3Bucket}/glue-temp/"
+        '--database': !Ref StockMarketDatabase
+        '--tablename': datalake_stockmarket_partitioned
+        '--redshifturl': !Ref RedshiftJDBCUrl
+        '--iamrole': !Ref GlueRoleARN
+      Description: StockMarket job ETL
+      ExecutionProperty:
+        MaxConcurrentRuns: 1
+      GlueVersion: 1.0
+      MaxRetries: 0
+      Name: Job-StockMarket
+      NumberOfWorkers: 10
+      Role: !Ref GlueRole
+      Timeout: 2880
+      WorkerType: G.1X
