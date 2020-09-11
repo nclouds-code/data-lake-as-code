@@ -68,13 +68,16 @@ Resources:
         MasterUserPassword: !Ref MasterUserPassword
         NodeType: dc2.large
         NumberOfNodes: 1
+        DatabaseName: stockmarketdb
 
-  # Glue:
-  #   Type: AWS::CloudFormation::Stack
-  #   Properties:
-  #     TemplateURL: !Sub "https://${S3CFTBucketName}.s3.amazonaws.com/${S3CFTFolderName}/glue.yml"
-  #     Parameters:
-  #       GlueRole: !GetAtt IAM.Outputs.GlueRole
-  #       GlueRoleARN: !GetAtt IAM.Outputs.GlueRoleARN
-  #       StockmarketS3Bucket: !Ref StockMarketS3Bucket
-  #       # RedshiftJDBCUrl:
+  Glue:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://${S3CFTBucketName}.s3.amazonaws.com/${S3CFTFolderName}/glue.yml"
+      Parameters:
+        GlueRole: !GetAtt IAM.Outputs.GlueRole
+        GlueRoleARN: !GetAtt IAM.Outputs.GlueRoleArn
+        StockmarketS3Bucket: !Ref StockMarketS3Bucket
+        RedshiftJDBCUrl: !GetAtt Redshift.Outputs.RedshiftHost
+        MasterUsername: root
+        MasterUserPassword: !Ref MasterUserPassword

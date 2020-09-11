@@ -7,6 +7,11 @@ Parameters:
     Type: String
   RedshiftJDBCUrl:
     Type: String
+  MasterUserPassword:
+    Type: String
+    NoEcho: 'true'
+  MasterUsername:
+    Type: String
 
 Resources:
   #### Database ####
@@ -15,16 +20,16 @@ Resources:
     Properties:
       CatalogId: !Ref AWS::AccountId
       DatabaseInput:
-        Name: Database-StockMarket
+        Name: database-stockmarket
   #### Classifier ####
   StockMarketClassifier:
     Type: AWS::Glue::Classifier
     Properties:
       CsvClassifier:
         AllowSingleColumn: false
-        ContainsHeader: true
+        ContainsHeader: PRESENT
         Delimiter: ","
-        DisableValueTrimming: Boolean
+        DisableValueTrimming: false
         Header:
           - Date
           - Open
@@ -67,7 +72,7 @@ Resources:
         '--tempbucket': !Sub "s3://${StockmarketS3Bucket}/glue-temp/"
         '--database': !Ref StockMarketDatabase
         '--tablename': datalake_stockmarket_partitioned
-        '--redshifturl': !Ref RedshiftJDBCUrl
+        '--redshifturl': !Sub "jdbc:redshift://${RedshiftJDBCUrl}:5439/stockmarketdb?user=root&password=${MasterUserPassword}"
         '--iamrole': !Ref GlueRoleARN
       Description: StockMarket job ETL
       ExecutionProperty:
@@ -79,10 +84,32 @@ Resources:
       Role: !Ref GlueRole
       Timeout: 2880
       WorkerType: G.1X
+  ##### Trigger #####
+  StartCrawler:
+    Type: AWS::Glue::Trigger
+    Properties: 
+      Actions: 
+        - CrawlerName: !Ref StockMarketCrawler
+      Name: start-stockmarket-crawler
+      Type: ON_DEMAND
+      WorkflowName: !Ref StockMarketWorkflow
+  ##### Trigger #####
+  StartETL:
+    Type: AWS::Glue::Trigger
+    Properties: 
+      Actions: 
+        - JobName: !Ref StockMarketJob
+      Name: start-stockmarket-etl
+      Type: CONDITIONAL
+      Predicate:
+        Conditions:
+          - LogicalOperator: EQUALS
+            CrawlerName: !Ref StockMarketCrawler
+            CrawlState: SUCCEEDED
+      WorkflowName: !Ref StockMarketWorkflow
   #### Workflow ####
   StockMarketWorkflow:
     Type: AWS::Glue::Workflow
     Properties: 
-      DefaultRunProperties: Json
       Description: workflow to execture stockmarket etl
-      Name: stockmarket-workflow
+      Name: stockmarketworkflow
