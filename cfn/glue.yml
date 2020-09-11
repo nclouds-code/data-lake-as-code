@@ -79,3 +79,10 @@ Resources:
       Role: !Ref GlueRole
       Timeout: 2880
       WorkerType: G.1X
+  #### Workflow ####
+  StockMarketWorkflow:
+    Type: AWS::Glue::Workflow
+    Properties: 
+      DefaultRunProperties: Json
+      Description: workflow to execture stockmarket etl
+      Name: stockmarket-workflow

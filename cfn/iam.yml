@@ -36,6 +36,6 @@ Outputs:
     Description: IAM role for Glue Crawler
     Value: !Ref GlueRole
 
-    GlueRoleArn:
+  GlueRoleArn:
     Description: IAM role for Glue Job
     Value: !GetAtt GlueRole.Arn
