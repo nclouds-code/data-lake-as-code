@@ -90,3 +90,11 @@ Resources:
         Identifier: poc
         VPC: !GetAtt VPC.Outputs.VPC
         Subnet: !GetAtt VPC.Outputs.PublicSubnet1
+        SagemakerRole: !GetAtt IAM.Outputs.SagemakerRoleArn
+
+Outputs:
+  S3Bucket:
+    Description: S3 bucket
+    Value: !Ref StockMarketS3Bucket
+    Export:
+      Name: POC-StockMarketS3Bucket

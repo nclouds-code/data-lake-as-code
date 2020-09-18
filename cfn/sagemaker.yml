@@ -3,7 +3,7 @@ Description: >
 
 Parameters:
   Identifier:
-    Default: poc
+    Default: poc-stockmarket-notebook
     Type: String
 
   VPC:
@@ -14,28 +14,11 @@ Parameters:
     Description: Subnet for the SageMaker instance
     Type: AWS::EC2::Subnet::Id
 
-Resources:
-  InstanceRole:
-    Type: AWS::IAM::Role
-    Properties:
-      RoleName: !Sub AmazonSageMaker-ExecutionRole-${Identifier}
-      Path: /service-role/
-      ManagedPolicyArns:
-      - arn:aws:iam::aws:policy/AmazonSageMakerFullAccess
-      AssumeRolePolicyDocument: |
-        {
-          "Version": "2012-10-17",
-          "Statement": [
-            {
-              "Effect": "Allow",
-              "Principal": {
-                "Service": "sagemaker.amazonaws.com"
-              },
-              "Action": "sts:AssumeRole"
-            }
-          ]
-        }
+  SagemakerRole:
+    Description: IAM Role for Sagemaker
+    Type: String
 
+Resources:
   InstanceSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -56,7 +39,7 @@ Resources:
       DirectInternetAccess: Enabled
       InstanceType: ml.t2.medium
       NotebookInstanceName: !Ref Identifier
-      RoleArn: !GetAtt InstanceRole.Arn
+      RoleArn: !Ref SagemakerRole
       SecurityGroupIds:
         - !Ref InstanceSecurityGroup
       SubnetId: !Ref Subnet

@@ -56,7 +56,7 @@ Resources:
       Configuration: "{\"Version\":1.0,\"Grouping\":{\"TableGroupingPolicy\":\"CombineCompatibleSchemas\"}}"
       Targets:
         S3Targets:
-          - Path: !Sub "s3://${StockmarketS3Bucket}/partitioned/"
+          - Path: !Sub "s3://${StockmarketS3Bucket}/"
   #### Job ####
   StockMarketJob:
     Type: AWS::Glue::Job
