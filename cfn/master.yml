@@ -87,7 +87,7 @@ Resources:
     Properties:
       TemplateURL: !Sub "https://${S3CFTBucketName}.s3.amazonaws.com/${S3CFTFolderName}/sagemaker.yml"
       Parameters:
-        Identifier: poc
+        Identifier: poc-stockmarket-notebook
         VPC: !GetAtt VPC.Outputs.VPC
         Subnet: !GetAtt VPC.Outputs.PublicSubnet1
         SagemakerRole: !GetAtt IAM.Outputs.SagemakerRoleArn

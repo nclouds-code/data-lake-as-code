@@ -21,6 +21,19 @@ Resources:
       CatalogId: !Ref AWS::AccountId
       DatabaseInput:
         Name: database-stockmarket
+  #### Data Lake Permissions ####
+  DatalakePermission:
+    Type: AWS::LakeFormation::Permissions
+    Properties:
+      DataLakePrincipal:
+        DataLakePrincipalIdentifier: !Ref GlueRoleARN
+      Permissions:
+        - ALL
+      PermissionsWithGrantOption:
+        - ALL
+      Resource:
+        DatabaseResource:
+          Name: database-stockmarket
   #### Classifier ####
   StockMarketClassifier:
     Type: AWS::Glue::Classifier
@@ -71,7 +84,7 @@ Resources:
         '--TempDir': !Sub "s3://${StockmarketS3Bucket}/glue-scripts/stockmarket.py.temp"
         '--tempbucket': !Sub "s3://${StockmarketS3Bucket}/glue-temp/"
         '--database': !Ref StockMarketDatabase
-        '--tablename': datalake_stockmarket_partitioned
+        '--tablename': !Ref StockmarketS3Bucket
         '--redshifturl': !Sub "jdbc:redshift://${RedshiftJDBCUrl}:5439/stockmarketdb?user=root&password=${MasterUserPassword}"
         '--iamrole': !Ref GlueRoleARN
       Description: StockMarket job ETL
