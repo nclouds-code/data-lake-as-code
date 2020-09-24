@@ -8,6 +8,16 @@ from awsglue.job import Job
 from pyspark.sql.functions import *
 from pyspark.sql.types import *
 
+args = getResolvedOptions(sys.argv,
+        [
+            "tempbucket",
+            "database",
+            "tablename",
+            "redshifturl",
+            "iamrole"
+        ]
+    )
+
 # Context:
 # For notebook work, uncomment `context = "notebook"` and comment `context = args["context"]`
 # context = "notebook"
