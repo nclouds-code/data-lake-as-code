@@ -87,6 +87,7 @@ Resources:
         '--tablename': !Ref StockmarketS3Bucket
         '--redshifturl': !Sub "jdbc:redshift://${RedshiftJDBCUrl}:5439/stockmarketdb?user=root&password=${MasterUserPassword}"
         '--iamrole': !Ref GlueRoleARN
+        '--context': "job"
       Description: StockMarket job ETL
       ExecutionProperty:
         MaxConcurrentRuns: 1
