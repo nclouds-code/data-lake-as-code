@@ -155,6 +155,12 @@ Resources:
       VpcSecurityGroupIds:
         - !Ref SecurityGroup
       ClusterSubnetGroupName: !Ref ClusterSubnetGroup
+      ElasticIp: !Ref RedshiftEIP
+      PubliclyAccessible: true
+  RedshiftEIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
 Outputs:
   RedshiftHost:
     Description: Amazon Redshift cluster endpoint address
