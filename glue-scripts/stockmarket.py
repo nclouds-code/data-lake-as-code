@@ -63,7 +63,7 @@ stockmarket_results = stockmarket_results.withColumnRenamed("date","date_1")
 stockmarket_results = stockmarket_results.withColumnRenamed("open","open_1")
 stockmarket_results = stockmarket_results.drop("partition_0")
 stockmarket_results = stockmarket_results.drop("partition_1")
-stockmarket_results = stockmarket_results.withColumn("date", stockmarket_results["date"].cast(DateType()))
+stockmarket_results = stockmarket_results.withColumn("date_1", stockmarket_results["date_1"].cast(DateType()))
 
 # Write data to Redshift:
 stockmarket_results.write.partitionBy("ticker","ticker_type").format("com.databricks.spark.redshift") \
