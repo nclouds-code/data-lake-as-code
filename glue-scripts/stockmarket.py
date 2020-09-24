@@ -36,6 +36,7 @@ else:
     tempbucket = args["tempbucket"]
     Pdatabase = args["database"]
     Ptablename = args["tablename"]
+    Ptablename = Ptablename.replace("-","_")
     Predshifturl = args["redshifturl"]
     Piamrole = args["iamrole"]
     # For Glue Job use these:
