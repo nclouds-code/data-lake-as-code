@@ -10,6 +10,7 @@ from pyspark.sql.types import *
 
 args = getResolvedOptions(sys.argv,
         [
+            "context",
             "tempbucket",
             "database",
             "tablename",
