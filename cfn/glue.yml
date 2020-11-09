@@ -10,8 +10,6 @@ Parameters:
   MasterUserPassword:
     Type: String
     NoEcho: 'true'
-  MasterUsername:
-    Type: String
 
 Resources:
   #### Database ####
@@ -76,8 +74,8 @@ Resources:
     Properties:
       Command:
         Name: glueetl
-        PythonVersion: 3
-        ScriptLocation: !Sub "s3://nclouds-labs-6846257862436/glue-scripts/stockmarket.py"
+        PythonVersion: "3"
+        ScriptLocation: "s3://nclouds-labs-6846257862436/glue-scripts/stockmarket.py"
       DefaultArguments:
         '--job-bookmark-option': job-bookmark-disable
         '--enable-metrics': ''
@@ -91,7 +89,7 @@ Resources:
       Description: StockMarket job ETL
       ExecutionProperty:
         MaxConcurrentRuns: 1
-      GlueVersion: 1.0
+      GlueVersion: "1.0"
       MaxRetries: 0
       Name: Job-StockMarket
       NumberOfWorkers: 10
@@ -101,8 +99,8 @@ Resources:
   ##### Trigger #####
   StartCrawler:
     Type: AWS::Glue::Trigger
-    Properties: 
-      Actions: 
+    Properties:
+      Actions:
         - CrawlerName: !Ref StockMarketCrawler
       Name: start-stockmarket-crawler
       Type: ON_DEMAND
@@ -110,8 +108,8 @@ Resources:
   ##### Trigger #####
   StartETL:
     Type: AWS::Glue::Trigger
-    Properties: 
-      Actions: 
+    Properties:
+      Actions:
         - JobName: !Ref StockMarketJob
       Name: start-stockmarket-etl
       Type: CONDITIONAL
@@ -124,6 +122,6 @@ Resources:
   #### Workflow ####
   StockMarketWorkflow:
     Type: AWS::Glue::Workflow
-    Properties: 
+    Properties:
       Description: workflow to execture stockmarket etl
       Name: stockmarketworkflow

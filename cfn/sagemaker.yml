@@ -28,7 +28,7 @@ Resources:
       SecurityGroupIngress:
       - Description: All
         CidrIp: 0.0.0.0/0
-        IpProtocol: -1
+        IpProtocol: "-1"
         FromPort: 0
         ToPort: 65535
 
