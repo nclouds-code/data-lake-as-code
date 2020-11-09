@@ -1,0 +1,100 @@
+Parameters:
+  S3CFTBucketName:
+    Description: Enter the Cloud Formation template S3 Bucket name.
+    Type: String
+    Default: 'nclouds-labs'
+
+  S3CFTFolderName:
+    Description: S3 bucket folder name where the CFT is stored.
+    Type: String
+    Default: 'cfn-templates'
+
+  MasterUserPassword:
+    AllowedPattern: '^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?!.*[@/\"'']).*$'
+    ConstraintDescription: Must contain only alphanumeric characters.
+    Description: >-
+      The password associated with the master user account for the Amazon
+      Redshift cluster that is being created.
+    MaxLength: '64'
+    MinLength: '8'
+    NoEcho: 'true'
+    Type: String
+
+Resources:
+  StockMarketS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Join
+      - "-"
+      - - "stockmarket"
+        - !Select
+          - 0
+          - !Split
+            - "-"
+            - !Select
+              - 2
+              - !Split
+                - "/"
+                - !Ref "AWS::StackId"
+
+  VPC:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://${S3CFTBucketName}.s3.amazonaws.com/${S3CFTFolderName}/vpc.yml"
+      Parameters:
+        Environment: poc
+        VpcName: stockmarket
+        VpcCIDR: 10.30.0.0/16
+        NumberOfSubnets: 2
+        SubnetOffset: 8
+
+  IAM:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://${S3CFTBucketName}.s3.amazonaws.com/${S3CFTFolderName}/iam.yml"
+      Parameters:
+        StockmarketS3Bucket: !Ref StockMarketS3Bucket
+
+  Redshift:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://${S3CFTBucketName}.s3.amazonaws.com/${S3CFTFolderName}/redshift.yml"
+      Parameters:
+        VPCID: !GetAtt VPC.Outputs.VPC
+        ClusterSubnetIDA: !GetAtt VPC.Outputs.PublicSubnet1
+        ClusterSubnetIDB: !GetAtt VPC.Outputs.PublicSubnet2
+        InboundTrafficCIDR: 0.0.0.0/0
+        MasterUsername: root
+        MasterUserPassword: !Ref MasterUserPassword
+        NodeType: dc2.large
+        NumberOfNodes: 1
+        DatabaseName: stockmarketdb
+
+  Glue:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://${S3CFTBucketName}.s3.amazonaws.com/${S3CFTFolderName}/glue.yml"
+      Parameters:
+        GlueRole: !GetAtt IAM.Outputs.GlueRole
+        GlueRoleARN: !GetAtt IAM.Outputs.GlueRoleArn
+        StockmarketS3Bucket: !Ref StockMarketS3Bucket
+        RedshiftJDBCUrl: !GetAtt Redshift.Outputs.RedshiftHost
+        MasterUsername: root
+        MasterUserPassword: !Ref MasterUserPassword
+
+  SageMaker:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "https://${S3CFTBucketName}.s3.amazonaws.com/${S3CFTFolderName}/sagemaker.yml"
+      Parameters:
+        Identifier: poc-stockmarket-notebook
+        VPC: !GetAtt VPC.Outputs.VPC
+        Subnet: !GetAtt VPC.Outputs.PublicSubnet1
+        SagemakerRole: !GetAtt IAM.Outputs.SagemakerRoleArn
+
+Outputs:
+  S3Bucket:
+    Description: S3 bucket
+    Value: !Ref StockMarketS3Bucket
+    Export:
+      Name: POC-StockMarketS3Bucket

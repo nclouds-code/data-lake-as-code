@@ -1,0 +1,45 @@
+Description: >
+  SageMaker Notebook Instance
+
+Parameters:
+  Identifier:
+    Default: poc-stockmarket-notebook
+    Type: String
+
+  VPC:
+    Type: AWS::EC2::VPC::Id
+    Description: Choose a VPC to deploy resources in
+
+  Subnet:
+    Description: Subnet for the SageMaker instance
+    Type: AWS::EC2::Subnet::Id
+
+  SagemakerRole:
+    Description: IAM Role for Sagemaker
+    Type: String
+
+Resources:
+  InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      VpcId: !Ref VPC
+      GroupName: !Sub SageMaker-Instance-SG-${Identifier}
+      GroupDescription: For SageMaker
+      SecurityGroupIngress:
+      - Description: All
+        CidrIp: 0.0.0.0/0
+        IpProtocol: -1
+        FromPort: 0
+        ToPort: 65535
+
+  NotebookInstance:
+    Type: AWS::SageMaker::NotebookInstance
+    Properties:
+      DefaultCodeRepository: https://github.com/nclouds-code/dl-poc-notebook.git
+      DirectInternetAccess: Enabled
+      InstanceType: ml.t2.medium
+      NotebookInstanceName: !Ref Identifier
+      RoleArn: !Ref SagemakerRole
+      SecurityGroupIds:
+        - !Ref InstanceSecurityGroup
+      SubnetId: !Ref Subnet

@@ -1,0 +1,129 @@
+Parameters:
+  GlueRole:
+    Type: String
+  GlueRoleARN:
+    Type: String
+  StockmarketS3Bucket:
+    Type: String
+  RedshiftJDBCUrl:
+    Type: String
+  MasterUserPassword:
+    Type: String
+    NoEcho: 'true'
+  MasterUsername:
+    Type: String
+
+Resources:
+  #### Database ####
+  StockMarketDatabase:
+    Type: AWS::Glue::Database
+    Properties:
+      CatalogId: !Ref AWS::AccountId
+      DatabaseInput:
+        Name: database-stockmarket
+  #### Data Lake Permissions ####
+  DatalakePermission:
+    Type: AWS::LakeFormation::Permissions
+    Properties:
+      DataLakePrincipal:
+        DataLakePrincipalIdentifier: !Ref GlueRoleARN
+      Permissions:
+        - ALL
+      PermissionsWithGrantOption:
+        - ALL
+      Resource:
+        DatabaseResource:
+          Name: database-stockmarket
+  #### Classifier ####
+  StockMarketClassifier:
+    Type: AWS::Glue::Classifier
+    Properties:
+      CsvClassifier:
+        AllowSingleColumn: false
+        ContainsHeader: PRESENT
+        Delimiter: ","
+        DisableValueTrimming: false
+        Header:
+          - Date
+          - Open
+          - High
+          - Low
+          - Close
+          - AdjClose
+          - Volume
+        Name: Classifier-StockMarket
+        QuoteSymbol: "\""
+  #### Crawler ####
+  StockMarketCrawler:
+    Type: AWS::Glue::Crawler
+    Properties:
+      Classifiers:
+        - !Ref StockMarketClassifier
+      DatabaseName: !Ref StockMarketDatabase
+      Description: Crawler for StockMarket POC
+      Name: Crawler-StockMarket
+      Role: !Ref GlueRole
+      SchemaChangePolicy:
+        UpdateBehavior: "UPDATE_IN_DATABASE"
+        DeleteBehavior: "DELETE_FROM_DATABASE"
+      Configuration: "{\"Version\":1.0,\"Grouping\":{\"TableGroupingPolicy\":\"CombineCompatibleSchemas\"}}"
+      Targets:
+        S3Targets:
+          - Path: !Sub "s3://${StockmarketS3Bucket}/"
+  #### Job ####
+  StockMarketJob:
+    Type: AWS::Glue::Job
+    Properties:
+      Command:
+        Name: glueetl
+        PythonVersion: 3
+        ScriptLocation: !Sub "s3://nclouds-labs-6846257862436/glue-scripts/stockmarket.py"
+      DefaultArguments:
+        '--job-bookmark-option': job-bookmark-disable
+        '--enable-metrics': ''
+        '--TempDir': !Sub "s3://${StockmarketS3Bucket}/glue-scripts/stockmarket.py.temp"
+        '--tempbucket': !Sub "s3://${StockmarketS3Bucket}/glue-temp/"
+        '--database': !Ref StockMarketDatabase
+        '--tablename': !Ref StockmarketS3Bucket
+        '--redshifturl': !Sub "jdbc:redshift://${RedshiftJDBCUrl}:5439/stockmarketdb?user=root&password=${MasterUserPassword}"
+        '--iamrole': !Ref GlueRoleARN
+        '--context': "job"
+      Description: StockMarket job ETL
+      ExecutionProperty:
+        MaxConcurrentRuns: 1
+      GlueVersion: 1.0
+      MaxRetries: 0
+      Name: Job-StockMarket
+      NumberOfWorkers: 10
+      Role: !Ref GlueRole
+      Timeout: 2880
+      WorkerType: G.1X
+  ##### Trigger #####
+  StartCrawler:
+    Type: AWS::Glue::Trigger
+    Properties: 
+      Actions: 
+        - CrawlerName: !Ref StockMarketCrawler
+      Name: start-stockmarket-crawler
+      Type: ON_DEMAND
+      WorkflowName: !Ref StockMarketWorkflow
+  ##### Trigger #####
+  StartETL:
+    Type: AWS::Glue::Trigger
+    Properties: 
+      Actions: 
+        - JobName: !Ref StockMarketJob
+      Name: start-stockmarket-etl
+      Type: CONDITIONAL
+      Predicate:
+        Conditions:
+          - LogicalOperator: EQUALS
+            CrawlerName: !Ref StockMarketCrawler
+            CrawlState: SUCCEEDED
+      WorkflowName: !Ref StockMarketWorkflow
+  #### Workflow ####
+  StockMarketWorkflow:
+    Type: AWS::Glue::Workflow
+    Properties: 
+      Description: workflow to execture stockmarket etl
+      Name: stockmarketworkflow
